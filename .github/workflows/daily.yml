@@ -1,0 +1,69 @@
+name: The Same Room — daily
+
+on:
+  schedule:
+    # 22:00 UTC = 07:00 the next morning in Seoul.
+    - cron: "0 22 * * *"
+  workflow_dispatch:
+    inputs:
+      skip_upload:
+        description: "Generate and render but do not upload (dry run)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: same-room-daily
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check ffmpeg
+        run: ffmpeg -version | head -n 1
+
+      - name: Run today
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          YT_PRIVACY: ${{ vars.YT_PRIVACY || 'private' }}
+          SKIP_UPLOAD: ${{ inputs.skip_upload && '1' || '0' }}
+        run: python scripts/run_day.py
+
+      - name: Commit the day
+        run: |
+          git config user.name  "same-room-bot"
+          git config user.email "same-room-bot@users.noreply.github.com"
+          git add -A archive log.jsonl 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "Nothing new to commit."
+          else
+            git commit -m "day $(date -u +%Y-%m-%d)"
+            git push
+          fi
+
+      - name: Keep the rendered video for inspection
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: render
+          path: build/
+          retention-days: 14
+          if-no-files-found: ignore
