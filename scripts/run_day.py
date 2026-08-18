@@ -73,7 +73,7 @@ def _generate_cloudflare(prompt: str, cfg: dict) -> bytes:
     resp = requests.post(
         url,
         headers={"Authorization": f"Bearer {token}"},
-        json={"prompt": prompt, "steps": cfg.get("image_steps", 8)},
+        json={"prompt": prompt, "steps": cfg.get("image_steps", 8), "seed": cfg["seed"]},
         timeout=180,
     )
 
