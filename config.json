@@ -1,0 +1,11 @@
+{
+  "channel_name": "The Same Room",
+  "start_date": "2026-08-19",
+  "total_days": 365,
+  "image_model": "gemini-3.1-flash-image",
+  "image_resolution": "1K",
+  "prompt_sha256": "1b0b0f84cca66efd6b2b2133bf72822635830ed6b459e8786b1ff51fdfe56e5f",
+  "video_seconds": 8,
+  "frame_width": 1080,
+  "frame_height": 1920
+}
